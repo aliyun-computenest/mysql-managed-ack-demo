@@ -72,19 +72,6 @@ tenant_cloudproductcode: '{{ tenantCloudProductCode }}'
 
 测试本服务构建无需任何费用，创建服务实例涉及的费用参考下文"服务实例计费说明"。
 
-## RAM账号所需权限
-
-本服务需要对ECS、VPC等资源进行访问和创建操作，若您使用RAM用户创建服务实例，需要在创建服务实例前，对使用的RAM用户的账号添加相应资源的权限。添加RAM权限的详细操作，请参见[为RAM用户授权](https://help.aliyun.com/document_detail/121945.html)。所需权限如下表所示。
-
-| 权限策略名称                          | 备注                     |
-|---------------------------------|------------------------|
-| AliyunCSFullAccess             | 管理容器服务服务（CS）的权限       |
-| AliyunROSFullAccess             | 管理资源编排服务（ROS）的权限       |
-| AliyunComputeNestUserFullAccess | 管理计算巢服务（ComputeNest）的用户侧权限 |
-| AliyunComputeNestSupplierFullAccess | 管理计算巢服务（ComputeNest）的服务商侧权限 |
-| AliyunARMSFullAccess | 管理业务实时监控服务（ARMS）的权限 |
-
-
 ## 服务实例计费说明
 
 测试本服务在计算巢上的费用主要涉及：
@@ -94,16 +81,6 @@ tenant_cloudproductcode: '{{ tenantCloudProductCode }}'
 
 
 ## 服务实例部署流程
-
-
-### 部署参数说明
-
-| 参数组         | 参数项         | 说明                                            |
-|-------------|-------------|-----------------------------------------------|
-| 服务实例        | 服务实例名称      | 长度不超过64个字符，必须以英文字母开头，可包含数字、英文字母、短划线（-）和下划线（_） |
-|             | 地域          | 服务实例部署的地域                                     |
-|             | 可用区         | mysql数据卷的可用区                                     |
-|             | 数据库root账号密码 | 各个租户的数据库管理密码                                  |
 
 ### 部署步骤
 

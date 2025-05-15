@@ -1,7 +1,4 @@
 ROSTemplateFormatVersion: '2015-09-01'
-Description:
-  en: deploy mysql
-  zh-cn: 部署mysql
 Parameters:
   AdminPassword:
     Type: String
