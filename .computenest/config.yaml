@@ -87,7 +87,7 @@ Service:
             Description: 用户最大的连接数
           mysql.thread_cache_size:
             Type: Number
-            Default: '16'
+            Default: 16
             Description: 线程缓存
             AllowedValues:
               - 8
