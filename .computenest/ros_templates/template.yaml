@@ -25,38 +25,13 @@ Parameters:
       zh-cn: 副本数
       en: Number Of Copies
 Resources:
-  KubernetesCluster:
-    Type: DATASOURCE::CS::KubernetesCluster
-    Properties:
-      ClusterId:
-        Ref: ClusterId
-  ClusterNameSpaceApplication:
-    Type: ALIYUN::CS::ClusterApplication
-    Properties:
-      YamlContent:
-        Fn::Sub:
-          - |
-            apiVersion: v1
-            kind: Namespace
-            metadata:
-              name: '${Name}'
-              labels:
-                tenant_userid: '{{ aliUid }}'
-                tenant_clusterid: '{{ tenantClusterId }}'
-                tenant_token: '{{ tenantToken }}'
-                tenant_cloudproductcode: '{{ tenantCloudProductCode }}'
-          - Name: '{{ serviceInstanceId }}'
-      ClusterId:
-        Ref: ClusterId
   ClusterApplication:
     Type: ALIYUN::CS::ClusterApplication
-    DependsOn:
-      - ClusterNameSpaceApplication
     Properties:
       ValidationMode: Basic
       WaitUntil:
         - Kind: Service
-          Name: '{{ serviceInstanceId }}'
+          Name: mysql-svc
           JsonPath: '$.status.loadBalancer.ingress[0].ip'
           Operator: NotEmpty
           Timeout: 300
@@ -68,9 +43,9 @@ Resources:
             apiVersion: apps/v1
             kind: StatefulSet
             metadata:
-              name: '{{ serviceInstanceId }}'
+              name: mysql-sts
             spec:
-              serviceName: '{{ serviceInstanceId }}'
+              serviceName: mysql-svc
               replicas: ${Replicas}
               selector:
                 matchLabels:
@@ -96,23 +71,6 @@ Resources:
                           mountPath: /data1/mysql/
                         - name: mysql-config
                           mountPath: /etc/mysql/conf.d
-                    - name: mysql-exporter
-                      image: compute-nest-registry.cn-hangzhou.cr.aliyuncs.com/bestpractice/mysql-export:1.0
-                      command:
-                        - /bin/mysqld_exporter
-                        - --collect.info_schema.innodb_metrics
-                        - --collect.info_schema.tables
-                        - --collect.info_schema.processlist
-                        - --collect.info_schema.tables.databases=*
-                        - --mysqld.username=root   #监控用户名称
-                      env:
-                        - name: MYSQLD_EXPORTER_PASSWORD
-                          value: ${Password}
-                        - name: DATA_SOURCE_NAME
-                          value: "root:${Password}@(localhost:3306)/"
-                      ports:
-                        - containerPort: 9104
-                          name: metrics
                   volumes:
                     - name: mysql-config
                       configMap:
@@ -130,15 +88,13 @@ Resources:
                 - ReadWriteOnce
               resources:
                 requests:
-                  storage: ${Storage}
+                  storage: ${Storage}Gi
               storageClassName: alicloud-disk-topology-alltype
             ---
             apiVersion: v1
             kind: Service
             metadata:
-              name: '{{ serviceInstanceId }}'
-              labels:
-                io.mysql.service: '{{ serviceInstanceId }}'
+              name: mysql-svc
             spec:
               selector:
                 app: mysql
@@ -147,10 +103,6 @@ Resources:
                   port: 3306
                   targetPort: 3306
                   name: mysql
-                - protocol: TCP
-                  port: 9104
-                  targetPort: 9104
-                  name: mysql-exporter
               type: LoadBalancer
             ---
             apiVersion: v1
@@ -167,28 +119,6 @@ Resources:
               name: mysql-secret
             data:
               password: ${RootPassword}
-            ---
-            apiVersion: monitoring.coreos.com/v1
-            kind: ServiceMonitor
-            metadata:
-              name: prometheus-service-monitor
-              annotations:
-                arms.prometheus.io/discovery: 'true'
-              labels:
-                prometheus-service-monitor: prometheus-service-monitor
-            spec:
-              selector:
-                matchLabels:
-                  io.mysql.service: '{{ serviceInstanceId }}'
-              namespaceSelector:
-                matchNames:
-                  - '{{ serviceInstanceId }}'
-              endpoints:
-                - port: mysql-exporter
-                  scheme: http
-                  path: /metrics
-                  interval: 10s
-                  scrapeTimeout: 10s
           - RootPassword:
               'Fn::Base64Encode':
                 Ref: AdminPassword
@@ -196,20 +126,14 @@ Resources:
               Ref: AdminPassword
             RegionId:
               Ref: ALIYUN::Region
-            Storage:
-              Fn::Sub:
-                - ${Storage}Gi
-                - Storage:
-                    Ref: Storage
             ConfigParam:
               Fn::Indent:
                 - '{{ serviceConfigParam }}'
                 - 2
-            Replicas:
-              Ref: Replicas
       ClusterId:
         Ref: ClusterId
-      DefaultNamespace: '{{ serviceInstanceId }}'
+      DefaultNamespace:
+        Ref: 'ALIYUN::StackName'
 Outputs:
   # 将公网ip做为http返回的地址显示在控制台
   Endpoint:
@@ -225,12 +149,6 @@ Outputs:
               - 'Fn::GetAtt':
                   - ClusterApplication
                   - WaitUntilData
-  AdminPassword:
-    Description:
-      zh-cn: 数据库管理员账号登录密码
-      en: DB Admin Account Password
-    Value:
-      Ref: AdminPassword
 Metadata:
   'ALIYUN::ROS::Interface':
     ParameterGroups:
