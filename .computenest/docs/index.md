@@ -15,11 +15,8 @@
 本示例创建过程大约持续1分钟，当服务变成待提交后构建成功。
 
 ## 服务使用前提准备
-本示例需要提前准备容器集群，集群类型支持ACK、ACS等类型，且集群中配置prometheus监控实现多租转发的配置。推荐使用[基础资源配置服务](https://computenest.console.aliyun.com/service/instance/create/cn-hangzhou?type=user&ServiceId=service-9ee2ab978b014397b0cc)，进行基础资源一键配置。
+本示例需要提前准备容器集群，集群类型支持ACK、ACS等类型。推荐使用[基础资源配置服务](https://computenest.console.aliyun.com/service/instance/create/cn-hangzhou?type=user&ServiceId=service-9ee2ab978b014397b0cc)，进行基础资源一键配置。
 
-注意：
-已有容器集群场景，必须通过基础资源配置服务处理集群，否则不支持prometheus监控的多租分发。
-一个集群只需配置一次基础资源，且给集群打开删除保护，避免误删除。
 
 ## 服务架构
 
@@ -29,44 +26,6 @@
 3. mysql使用yaml部署
 
 ![architecture.png](architecture.png)
-
-## 开启Prometheus监控配置
-该服务支持配置Prometheus监控，服务实例部署成功后，服务商及其租户都能在控制台查看监控大盘, 开启Prometheus监控需要以下配置**(每个集群配置一次即可**)
-### 模板中添加租户标签
-该服务的架构为用namespace隔离各个租户的资源，为了区分各个租户的监控指标，需要给每个namespace打上租户标签，租户标签内容如下：
-```yaml
-tenant_userid: '{{ aliUid }}'
-tenant_clusterid: '{{ tenantClusterId }}'
-tenant_token: '{{ tenantToken }}'
-tenant_cloudproductcode: '{{ tenantCloudProductCode }}'
-```
-该示例服务模板中已经正确配置该租户标签，可直接使用，无需重新配置。示例如下：
-```yaml
- ClusterNameSpaceApplication:
-    Type: ALIYUN::CS::ClusterApplication
-    Properties:
-      YamlContent:
-        Fn::Sub:
-          - |
-            apiVersion: v1
-            kind: Namespace
-            metadata:
-              name: '${Name}'
-              labels:
-                tenant_userid: '{{ aliUid }}'
-                tenant_clusterid: '{{ tenantClusterId }}'
-                tenant_token: '{{ tenantToken }}'
-                tenant_cloudproductcode: '{{ tenantCloudProductCode }}'
-          - Name: '{{ serviceInstanceId }}'
-```
-### 配置产品标识和对应的大盘链接
-托管版多租服务使用计算巢提供的Prometheus能力，需要设置服务标识和监控大盘信息：
-1. 服务标识：表示服务在监控系统中的唯一标识，该服务中使用"cn-mariadb"为服务标识，**cn-mariadb用于测试**，所有服务共享使用该产品标识。目前cn-mariadb
-   已开通杭州和香港两个地域，支持在这个两个地域下测试。**若需要使用专用服务标识，详情可以通过工单或钉钉交流群咨询计算巢开发同学。**
-2. 监控大盘设置包括监控大盘标题和Grafana大盘链接，监控大盘信息与服务标识是对应关系，在服务标识为cn-mariadb时，大盘标题默认为：MySQL Exporter Quickstart and
-   Dashboard，大盘链接也是固定内容，无需修改。**如需要修改大盘信息，详情可以通过工单或钉钉交流群咨询计算巢开发同学**。
-   该示例服务中已经配置好了监控大盘信息，无需修改，保持默认即可，配置示例如下：
-   ![prom-8.jpg](prom-8.jpg)
 
 ## 服务构建计费说明
 
